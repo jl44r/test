@@ -270,8 +270,44 @@
 
         // إيقاف الكاميرا عند مغادرة الصفحة
         window.addEventListener('pagehide', () => stopScanner());
+       
         window.addEventListener('beforeunload', () => stopScanner());
+        // ضع هذا في أسفل الصفحة قبل </body> للاختبار والتصحيح
+window.addEventListener('DOMContentLoaded', function() {
+  console.log('[DEBUG] DOM loaded');
+  const btn = document.getElementById('openScannerBtn');
+  console.log('[DEBUG] openScannerBtn ->', btn);
+  if (!btn) {
+    alert('DEBUG: openScannerBtn not found (id mismatch)');
+    return;
+  }
+  btn.addEventListener('click', function(e) {
+    console.log('[DEBUG] openScannerBtn clicked');
+    alert('DEBUG: clicked - starting test for getUserMedia availability');
+    // اختبار توفر الكاميرا
+    const hasCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    console.log('[DEBUG] getUserMedia supported?', hasCam);
+    if (!hasCam) {
+      alert('getUserMedia غير مدعوم في هذا المتصفح / السياق');
+      return;
+    }
+    // نجرب طلب إذن الكاميرا سريعاً (لن نبدأ المسح هنا)
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(s => {
+        console.log('[DEBUG] camera stream obtained', s);
+        // نوقف فوراً لمنع بقاء الكاميرا مشغلة
+        s.getTracks().forEach(t => t.stop());
+        alert('كاميرا متاحة (تم الحصول على الستريم بنجاح)');
+      })
+      .catch(err => {
+        console.error('[DEBUG] getUserMedia error', err);
+        alert('خطأ عند طلب الكاميرا: ' + err.message);
+      });
+  });
+});
     </script>
+    
 </body>
 
 </html>
+
