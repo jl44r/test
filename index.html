@@ -7,6 +7,7 @@
     <meta http-equiv="expires" content="-1" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Internet hotspot - Log in</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="css/style.css">
 
     <style>
@@ -137,6 +138,12 @@
                     <button type="button" id="openScannerBtn" class="btn-qr" aria-label="Open back camera">
                         Scan QR (Back Camera)
                     </button>
+                    <!-- جدييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييد -->
+                    <div style="text-align:center; margin-top:10px;">
+    <button type="button" onclick="startScan()">📷 Scan QR Code</button>
+</div>
+
+<div id="reader" style="width:300px; margin:auto; display:none;"></div>
 
                     <!-- fallback: input ملف يستخدم capture="environment" -->
                     <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
@@ -269,7 +276,35 @@
             });
         })();
     </script>
+    <script>
+let html5QrCode;
+
+function startScan() {
+    document.getElementById("reader").style.display = "block";
+    html5QrCode = new Html5Qrcode("reader");
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        {
+            fps: 10,
+            qrbox: 250
+        },
+        qrCodeMessage => {
+            // وضع الكود في حقل اسم المستخدم
+            document.getElementById("username").value = qrCodeMessage;
+
+            // إيقاف الكاميرا
+            html5QrCode.stop();
+            document.getElementById("reader").style.display = "none";
+        },
+        errorMessage => {
+            // تجاهل الأخطاء
+        }
+    );
+}
+</script>
 
 </body>
 
 </html>
+
