@@ -8,17 +8,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Internet hotspot - Log in</title>
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- Minimal CSS for scanner UI (يمكن نقله إلى css/style.css) -->
+    <style>
+        /* scanner UI */
+        .btn-qr{
+            display:inline-block;text-decoration:none;text-align:center;padding:10px 14px;border-radius:8px;
+            background:#fff;border:1px solid rgba(43,140,255,0.14);color:#2b8cff;font-weight:600;cursor:pointer;
+            transition:transform .05s ease,box-shadow .08s ease;margin-top:6px;
+        }
+        .btn-qr.secondary{background:transparent;border:1px solid #e6e9ee;color:#666}
+        #scannerArea{display:none;margin-top:10px;border-radius:8px;overflow:hidden;background:#000;position:relative;}
+        #qrVideo{width:100%;height:auto;display:block;background:#000;}
+        #scanOverlay{position:absolute;left:0;top:0;right:0;bottom:0;pointer-events:none;
+                     box-shadow: inset 0 0 0 9999px rgba(0,0,0,0.35); }
+        #scanBox{position:absolute;left:50%;top:50%;width:70%;max-width:360px;height:38%;transform:translate(-50%,-50%);
+                 border:2px dashed rgba(255,255,255,0.7);border-radius:8px;box-sizing:border-box;}
+        #scannerMsg{margin-top:6px;font-size:13px;color:#000;text-align:center;padding:8px;display:block}
+    </style>
 </head>
 
 <body>
 
-    <!-- two other colors
-
-<body class="lite">
-<body class="dark">
-
--->
-
+    <!-- CHAP hidden form (موجود في قوالب MikroTik) -->
     $(if chap-id)
     <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
         <input type="hidden" name="username" />
@@ -27,17 +39,10 @@
         <input type="hidden" name="popup" value="true" />
     </form>
 
+    <!-- md5.js موجود أصلاً في ملفاتك؛ مطلوب لحساب CHAP -->
     <script src="/md5.js"></script>
-    <script>
-        function doLogin() {
-            document.sendin.username.value = document.login.username.value;
-            document.sendin.password.value = hexMD5('$(chap-id)' + document.login.username.value + '$(chap-challenge)');
-            document.sendin.submit();
-            return false;
-        }
-
-    </script>
     $(endif)
+
     <div class="ie-fixMinHeight">
         <div class="main">
             <div class="wrap animated fadeIn">
@@ -48,7 +53,6 @@
                         <path fill="#fff" d="M7.32 13.66L0 41.74 3.12 41.74 9.49 15.94 9.58 15.94 15.01 41.74 18.22 41.74 36.86 16.34 36.95 16.34 30.02 41.74 33.18 41.74 40.4 13.66 35.73 13.66 17.23 38.87 11.99 13.66 7.32 13.66zM43.43 21.45L38.19 41.74 41.16 41.74 46.4 21.45 43.43 21.45zM50.68 21.45L45.5 41.74 48.47 41.74 50.36 34.39 55.55 30.77 62.02 41.74 65.27 41.74 57.91 29.28 69.43 21.45 65.46 21.45 51.21 31.36 51.12 31.28 53.66 21.45 50.68 21.45z" />
                         <path d="M71.18 21.45L65.94 41.74h3l2.74-10.62c1-3.81 3.82-7.39 9.16-7.47.56 0 1.13 0 1.7 0l.66-2.48c-.52 0-1.09 0-1.61 0-4.34 0-6.94 2-8.82 5h-.1l1.23-4.68zM103.8 28.8c0-5-4-7.94-9.63-7.94-8.69 0-13.59 6.37-13.59 13 0 5.07 3.44 8.45 9.72 8.45 9 0 13.5-6.68 13.5-13.53m-3 .52c0 4.72-3.44 10.93-9.95 10.93-5 0-7.32-2.68-7.32-6.61 0-4.76 3.59-10.7 10.1-10.7 4.77 0 7.17 2.6 7.17 6.38M132.33 21.43L134.26 13.66 105.19 13.66 103.27 21.45 112.59 21.45 112.59 21.45 122.99 21.45 122.99 21.45 132.33 21.43zM111.67 25.17L107.55 41.74 117.93 41.74 122.06 25.17 122.06 25.16 111.67 25.16 111.67 25.17zM134 25.17l-4.11 16.57h9.35l4.1-16.57zm10.28-3.73l1.94-7.78h-9.34l-2 7.79zM150.09 13.66L143.11 41.74 152.45 41.74 153.91 35.92 156.04 34.34 159.34 41.74 169.49 41.74 163.26 29.55 174.26 21.33 163.07 21.33 156.18 27.3 156.09 27.3 159.44 13.66 150.09 13.66zM47.45 0c1.14 7.93 5.39 12.74 14.07 13.14A10.69 10.69 0 0 1 47.45 0" fill="#fff" fill-rule="evenodd" />
                         <path d="M42.91,1.4c.1,0,.11,0,.12.11A16.55,16.55,0,0,0,48.26,13a16.6,16.6,0,0,0,12,4.66c-10,4-20.55-5.6-17.33-16.28" fill="#fff" fill-rule="evenodd" /></svg>
-
 
                     <p class="info $(if error)alert$(endif)">
                         $(if error == "")Please log in to use the internet hotspot service $(if trial == 'yes')<br />Free trial available, <a href="$(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)">click here</a>.$(endif)
@@ -61,146 +65,22 @@
                         <input name="username" type="text" value="" placeholder="Username" />
                     </label>
 
-                     <a class="btn-qr" href="https://laksa19.github.io/myqr?dst=$(link-orig-esc)&mac=$(mac-esc)"
-                       target="_blank" rel="noopener noreferrer" aria-label="Open QR code scanner (opens new tab)">
-                       Scan QR / رمز QR
-                    </a>
-                    <!-- أضف هذا داخل <form> قبل زر <input type="submit"> -->
-<!-- 1) طريقة مبسطة وموثوقة على كثير من الهواتف -->
-<input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
-<button type="button" class="btn-qr" id="openFileBtn"
-    aria-label="Open back camera (file capture)">
-    Scan QR (back camera) — ملف/صورة
-</button>
+                    <!-- زر فتح الماسح (يفتح الكاميرا الخلفية إن أمكن). يفتح داخل نفس الصفحة -->
+                    <button type="button" id="openScannerBtn" class="btn-qr" aria-label="Open QR scanner (back camera)">
+                        Scan QR (Back Camera)
+                    </button>
 
-<!-- 2) طريقة Live باستخدام getUserMedia (يفتح كاميرا حيّة، يفضل الخلفية) -->
-<button type="button" class="btn-qr" id="openLiveBtn"
-    aria-label="Open live camera (prefer back)">
-    Scan QR (live camera)
-</button>
+                    <!-- fallback file input (capture environment) -->
+                    <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
 
-<!-- حاوية الفيديو والالتقاط -->
-<div id="scannerArea" style="display:none;margin-top:10px;">
-    <video id="qrVideo" playsinline autoplay style="width:100%;max-height:360px;background:#000;"></video>
-    <div style="margin-top:8px;">
-        <button type="button" id="captureBtn" class="btn-qr">Capture</button>
-        <button type="button" id="stopBtn" class="btn-qr secondary">Close</button>
-    </div>
-</div>
-
-<script>
-/* ---------- 1) ملف مع capture="environment" (فتح الكاميرا الخلفية على كثير من الأجهزة) ---------- */
-document.getElementById('openFileBtn').addEventListener('click', function(){
-    document.getElementById('qrFileInput').click();
-});
-
-document.getElementById('qrFileInput').addEventListener('change', async function(e){
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    // مثال: عرض الصورة في تبويب جديد (يمكن إرسالها لخادم للفحص أو تمريرها لمكتبة jsQR)
-    const url = URL.createObjectURL(file);
-    window.open(url, '_blank');
-    // إذا أردت إرسالها إلى endpoint لمعالجتها:
-    // const fd = new FormData(); fd.append('image', file);
-    // await fetch('https://your-scan-endpoint.example/scan', { method:'POST', body: fd });
-});
-
-/* ---------- 2) Live getUserMedia مع محاولة لاختيار الكاميرا الخلفية ---------- */
-const openLiveBtn = document.getElementById('openLiveBtn');
-const scannerArea = document.getElementById('scannerArea');
-const video = document.getElementById('qrVideo');
-const captureBtn = document.getElementById('captureBtn');
-const stopBtn = document.getElementById('stopBtn');
-let streamRef = null;
-
-async function startLiveScanner() {
-    // الأفضل تجربة ideal ثم fallback
-    const constraints = { video: { facingMode: { ideal: "environment" } } };
-    try {
-        // محاولة أولى: ترك المتصفح يختار الكاميرا الخلفية إن أمكن
-        const s = await navigator.mediaDevices.getUserMedia(constraints);
-        streamRef = s;
-        video.srcObject = s;
-        scannerArea.style.display = 'block';
-        return;
-    } catch (err) {
-        console.warn('getUserMedia with facingMode failed, trying enumerateDevices fallback:', err);
-    }
-
-    // محاولة بديلة: جلب الأجهزة واختيار deviceId لكاميرا تبدو "خلفية"
-    try {
-        // طلب إذن بسيط (بعض المتصفحات لا تعرض أسماء الأجهزة قبل الإذن)
-        const s = await navigator.mediaDevices.getUserMedia({ video: true });
-        streamRef = s;
-        // بعد الإذن نستطيع قراءة labels
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        // اغلاق الستريم الظرفي الآن (سوف نعيد فتح الجهاز المحدد)
-        stopStream(streamRef);
-        streamRef = null;
-
-        // ابحث عن أول جهاز فيديو يحتوي اسماً يدل على back / rear / environment
-        let preferred = devices.find(d => d.kind === 'videoinput' && /back|rear|environment/i.test(d.label));
-        // إذا لم نجده اختر آخر جهاز كاميرا غالباً يكون الخلفية على الهواتف
-        if(!preferred) {
-            const vids = devices.filter(d => d.kind === 'videoinput');
-            if(vids.length) preferred = vids[vids.length - 1];
-        }
-
-        if(preferred) {
-            const s2 = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: preferred.deviceId } } });
-            streamRef = s2;
-            video.srcObject = s2;
-            scannerArea.style.display = 'block';
-        } else {
-            // فشل إيجاد جهاز محدد — اعرض رسالة أو حاول الكاميرا الافتراضية
-            const s3 = await navigator.mediaDevices.getUserMedia({ video: true });
-            streamRef = s3;
-            video.srcObject = s3;
-            scannerArea.style.display = 'block';
-        }
-    } catch (err2) {
-        console.error('Cannot access camera:', err2);
-        alert('لا يمكن الوصول إلى الكاميرا على هذا الجهاز / في هذا المتصفح. قد يمنع captive portal الوصول أو المتصفح لا يدعم getUserMedia.');
-    }
-}
-
-function stopStream(s) {
-    if(!s) return;
-    s.getTracks().forEach(t => t.stop());
-}
-
-openLiveBtn.addEventListener('click', () => {
-    // افتح الماسح الحي (سيطلب تصريح الكاميرا)
-    startLiveScanner();
-});
-
-stopBtn.addEventListener('click', () => {
-    stopStream(streamRef);
-    streamRef = null;
-    video.srcObject = null;
-    scannerArea.style.display = 'none';
-});
-
-// مثال بسيط لالتقاط فريم من الفيديو إلى canvas (يمكن بعد ذلك استخدام مكتبة jsQR لفحص QR)
-captureBtn.addEventListener('click', () => {
-    if(!video || !video.videoWidth) {
-        alert('الكاميرا غير جاهزة بعد');
-        return;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    // عرض الصورة الملتقطة في تبويب جديد
-    canvas.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        // هنا يمكنك إرسال الـ blob لمخدم أو تمريره إلى مكتبة jsQR لقراءة الرمز
-    }, 'image/jpeg', 0.9);
-});
-</script>
-                    
+                    <!-- منطقة الماسح الحي -->
+                    <div id="scannerArea">
+                        <video id="qrVideo" playsinline autoplay></video>
+                        <div id="scanOverlay">
+                            <div id="scanBox"></div>
+                        </div>
+                        <div id="scannerMsg">Scanner ready</div>
+                    </div>
 
                     <input type="submit" value="Connect" />
 
@@ -210,8 +90,188 @@ captureBtn.addEventListener('click', () => {
             </div>
         </div>
     </div>
+
+    <!-- jsQR lib (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+    <script>
+        // CHAP flags from template (تعريف القيم إذا كانت موجودة)
+        var CHAP_EXISTS = false;
+        var CHAP_ID = '';
+        var CHAP_CHALLENGE = '';
+        $(if chap-id)
+        CHAP_EXISTS = true;
+        CHAP_ID = '$(chap-id)';
+        CHAP_CHALLENGE = '$(chap-challenge)';
+        $(endif)
+
+        const openScannerBtn = document.getElementById('openScannerBtn');
+        const qrFileInput = document.getElementById('qrFileInput');
+        const scannerArea = document.getElementById('scannerArea');
+        const video = document.getElementById('qrVideo');
+        const scannerMsg = document.getElementById('scannerMsg');
+
+        let stream = null;
+        let scanning = false;
+        let rafId = null;
+
+        openScannerBtn.addEventListener('click', () => {
+            // جرب فتح الكاميرا الحيّة أولاً
+            startLiveScanner().catch(err => {
+                console.warn('Live scanner failed:', err);
+                // fallback لفتح ملف (capture)
+                qrFileInput.click();
+            });
+        });
+
+        // fallback: صورة من الجهاز
+        qrFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if(!file) return;
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                if(code && code.data) {
+                    handleQRCode(code.data.trim());
+                } else {
+                    alert('لا يوجد رمز QR صالح في الصورة.');
+                }
+            }
+        });
+
+        async function startLiveScanner() {
+            scannerArea.style.display = 'block';
+            scannerMsg.textContent = 'Requesting camera...';
+            // حاول facingMode: environment
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+            } catch (err) {
+                // فشل: جرب video:true ثم اختيار الجهاز الخلفي بعد الحصول على الأذن
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    stream = s;
+                } catch (err2) {
+                    throw err2;
+                }
+            }
+
+            video.srcObject = stream;
+            video.setAttribute('playsinline', true);
+            await video.play();
+
+            scanning = true;
+            scannerMsg.textContent = 'Scanning for QR...';
+            tick();
+        }
+
+        function stopScanner() {
+            scanning = false;
+            if(rafId) cancelAnimationFrame(rafId);
+            if(stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+            scannerArea.style.display = 'none';
+            scannerMsg.textContent = '';
+        }
+
+        function tick() {
+            if(!scanning) return;
+            if(video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                try {
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+                    if (code && code.data) {
+                        stopScanner();
+                        handleQRCode(code.data.trim());
+                        return;
+                    }
+                } catch(e) {
+                    console.warn('scan error', e);
+                }
+            }
+            rafId = requestAnimationFrame(tick);
+        }
+
+        // تحليل نص الـ QR ثم تسجيل الدخول
+        function handleQRCode(qrText) {
+            if(!qrText) {
+                alert('رمز QR فارغ.');
+                return;
+            }
+            // تنسيق مسموح: "username" أو "username:password"
+            let username = qrText;
+            let password = qrText;
+            if(qrText.indexOf(':') !== -1) {
+                const parts = qrText.split(':');
+                username = parts[0];
+                password = parts.slice(1).join(':');
+            }
+
+            // إذا CHAP موجود نستخدم sendin مع md5
+            if (CHAP_EXISTS) {
+                if (typeof hexMD5 === 'function') {
+                    const hashed = hexMD5(CHAP_ID + username + CHAP_CHALLENGE);
+                    if (document.sendin) {
+                        document.sendin.username.value = username;
+                        document.sendin.password.value = hashed;
+                        // إرسال الفورم (CHAP)
+                        document.sendin.submit();
+                        return;
+                    }
+                } else {
+                    alert('md5.js غير متوفر. CHAP يتطلب md5.js.');
+                    return;
+                }
+            }
+
+            // غير CHAP: إرسال POST عادي إلى $(link-login-only)
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '$(link-login-only)';
+            form.style.display = 'none';
+
+            const iUser = document.createElement('input');
+            iUser.name = 'username';
+            iUser.value = username;
+            form.appendChild(iUser);
+
+            const iPass = document.createElement('input');
+            iPass.name = 'password';
+            iPass.value = password;
+            form.appendChild(iPass);
+
+            const iDst = document.createElement('input');
+            iDst.name = 'dst';
+            iDst.value = '$(link-orig)';
+            form.appendChild(iDst);
+
+            const iPopup = document.createElement('input');
+            iPopup.name = 'popup';
+            iPopup.value = 'true';
+            form.appendChild(iPopup);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // إيقاف الكاميرا عند مغادرة الصفحة
+        window.addEventListener('pagehide', () => stopScanner());
+        window.addEventListener('beforeunload', () => stopScanner());
+    </script>
 </body>
 
 </html>
-
-
