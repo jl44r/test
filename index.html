@@ -7,11 +7,13 @@
     <meta http-equiv="expires" content="-1" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Internet hotspot - Log in</title>
+
+    <!-- QR Library -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+
     <link rel="stylesheet" href="css/style.css">
 
     <style>
-        /* بسيط لتنسيق زر الماسح ومنطقة الفيديو (يمكن نقله إلى css/style.css) */
         .btn-qr {
             display: inline-block;
             padding: 10px 14px;
@@ -21,266 +23,85 @@
             color: #2b8cff;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 6px;
-        }
-
-        #scannerArea {
-            display: none;
             margin-top: 10px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #000;
-            position: relative;
-        }
-
-        #qrVideo {
             width: 100%;
-            height: auto;
-            display: block;
-            background: #000;
         }
 
-        #scannerMsg {
-            margin-top: 6px;
-            font-size: 13px;
-            color: #666;
-            text-align: center;
-        }
-
-        /* مربع إرشادي فوق الفيديو */
-        #scanOverlay {
-            position: absolute;
-            left: 0;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.35);
-        }
-
-        #scanBox {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: 70%;
-            max-width: 360px;
-            height: 38%;
-            transform: translate(-50%, -50%);
-            border: 2px dashed rgba(255, 255, 255, 0.7);
-            border-radius: 8px;
-            box-sizing: border-box;
+        #reader {
+            width: 300px;
+            margin: 15px auto;
+            display: none;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- two other colors
+$(if chap-id)
+<form name="sendin" action="$(link-login-only)" method="post" style="display:none">
+    <input type="hidden" name="username" />
+    <input type="hidden" name="password" />
+    <input type="hidden" name="dst" value="$(link-orig)" />
+    <input type="hidden" name="popup" value="true" />
+</form>
 
-<body class="lite">
-<body class="dark">
+<script src="/md5.js"></script>
+<script>
+function doLogin() {
+    document.sendin.username.value = document.login.username.value;
+    document.sendin.password.value =
+        hexMD5('$(chap-id)' + document.login.username.value + '$(chap-challenge)');
+    document.sendin.submit();
+    return false;
+}
+</script>
+$(endif)
 
--->
+<div class="ie-fixMinHeight">
+    <div class="main">
+        <div class="wrap animated fadeIn">
 
-    $(if chap-id)
-    <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
-        <input type="hidden" name="username" />
-        <input type="hidden" name="password" />
-        <input type="hidden" name="dst" value="$(link-orig)" />
-        <input type="hidden" name="popup" value="true" />
-    </form>
+            <form name="login" action="$(link-login-only)" method="post"
+                $(if chap-id) onSubmit="return doLogin()" $(endif)>
 
-    <script src="/md5.js"></script>
-    <script>
-        function doLogin() {
-            document.sendin.username.value = document.login.username.value;
-            document.sendin.password.value = hexMD5('$(chap-id)' + document.login.username.value + '$(chap-challenge)');
-            document.sendin.submit();
-            return false;
-        }
+                <input type="hidden" name="dst" value="$(link-orig)" />
+                <input type="hidden" name="popup" value="true" />
 
-    </script>
-    $(endif)
-    <div class="ie-fixMinHeight">
-        <div class="main">
-            <div class="wrap animated fadeIn">
-                <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()"
-                    $(endif)>
-                    <input type="hidden" name="dst" value="$(link-orig)" />
-                    <input type="hidden" name="popup" value="true" />
-                    <svg class="logo" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174 42">
-                        <path fill="#fff"
-                            d="M7.32 13.66L0 41.74 3.12 41.74 9.49 15.94 9.58 15.94 15.01 41.74 18.22 41.74 36.86 16.34 36.95 16.34 30.02 41.74 33.18 41.74 40.4 13.66 35.73 13.66 17.23 38.87 11.99 13.66 7.32 13.66zM43.43 21.45L38.19 41.74 41.16 41.74 46.4 21.45 43.43 21.45zM50.68 21.45L45.5 41.74 48.47 41.74 50.36 34.39 55.55 30.77 62.02 41.74 65.27 41.74 57.91 29.28 69.43 21.45 65.46 21.45 51.21 31.36 51.12 31.28 53.66 21.45 50.68 21.45z" />
-                        <path
-                            d="M71.18 21.45L65.94 41.74h3l2.74-10.62c1-3.81 3.82-7.39 9.16-7.47.56 0 1.13 0 1.7 0l.66-2.48c-.52 0-1.09 0-1.61 0-4.34 0-6.94 2-8.82 5h-.1l1.23-4.68zM103.8 28.8c0-5-4-7.94-9.63-7.94-8.69 0-13.59 6.37-13.59 13 0 5.07 3.44 8.45 9.72 8.45 9 0 13.5-6.68 13.5-13.53m-3 .52c0 4.72-3.44 10.93-9.95 10.93-5 0-7.32-2.68-7.32-6.61 0-4.76 3.59-10.7 10.1-10.7 4.77 0 7.17 2.6 7.17 6.38M132.33 21.43L134.26 13.66 105.19 13.66 103.27 21.45 112.59 21.45 112.59 21.45 122.99 21.45 122.99 21.45 132.33 21.43zM111.67 25.17L107.55 41.74 117.93 41.74 122.06 25.17 122.06 25.16 111.67 25.16 111.67 25.17zM134 25.17l-4.11 16.57h9.35l4.1-16.57zm10.28-3.73l1.94-7.78h-9.34l-2 7.79zM150.09 13.66L143.11 41.74 152.45 41.74 153.91 35.92 156.04 34.34 159.34 41.74 169.49 41.74 163.26 29.55 174.26 21.33 163.07 21.33 156.18 27.3 156.09 27.3 159.44 13.66 150.09 13.66zM47.45 0c1.14 7.93 5.39 12.74 14.07 13.14A10.69 10.69 0 0 1 47.45 0"
-                            fill="#fff" fill-rule="evenodd" />
-                        <path
-                            d="M42.91,1.4c.1,0,.11,0,.12.11A16.55,16.55,0,0,0,48.26,13a16.6,16.6,0,0,0,12,4.66c-10,4-20.55-5.6-17.33-16.28"
-                            fill="#fff" fill-rule="evenodd" />
-                    </svg>
+                <p class="info">
+                    Please scan QR code to connect
+                </p>
 
+                <!-- USERNAME -->
+                <label>
+                    <img class="ico" src="img/user.svg" alt="#" />
+                    <input id="username" name="username" type="text" placeholder="Username" />
+                </label>
 
-                    <p class="info $(if error)alert$(endif)">
-                        $(if error == "")Please log in to use the internet hotspot service $(if trial ==
-                        'yes')<br />Free trial available, <a
-                            href="$(link-login-only)?dst=$(link-orig-esc)&amp;username=T-$(mac-esc)">click
-                            here</a>.$(endif)
-                        $(endif)
+                <!-- SCAN BUTTON -->
+                <button type="button" class="btn-qr" onclick="startScan()">
+                    📷 Scan QR Code (Auto Login)
+                </button>
 
-                        $(if error)$(error)$(endif)
-                    </p>
-                    <label>
-                        <img class="ico" src="img/user.svg" alt="#" />
-                        <input name="username" type="text" value="" placeholder="Username" />
-                    </label>
+                <!-- QR CAMERA -->
+                <div id="reader"></div>
 
-                    <!-- زر جديد يفتح الكاميرا الخلفية فقط -->
-                    <button type="button" id="openScannerBtn" class="btn-qr" aria-label="Open back camera">
-                        Scan QR (Back Camera)
-                    </button>
-                    <!-- جدييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييييد -->
-                    <div style="text-align:center; margin-top:10px;">
-    <button type="button" onclick="startScan()">📷 Scan QR Code</button>
-</div>
+                <!-- HIDDEN CONNECT BUTTON (BACKUP) -->
+                <input type="submit" value="Connect" style="display:none" />
 
-<div id="reader" style="width:300px; margin:auto; display:none;"></div>
+            </form>
 
-                    <!-- fallback: input ملف يستخدم capture="environment" -->
-                    <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
-
-                    <!-- منطقة عرض الفيديو (ستظهر عند السماح بالكاميرا) -->
-                    <div id="scannerArea">
-                        <video id="qrVideo" playsinline autoplay></video>
-                        <div id="scanOverlay">
-                            <div id="scanBox"></div>
-                        </div>
-                        <div id="scannerMsg">Ready to scan...</div>
-                    </div>
-
-                    <input type="submit" value="Connect" />
-
-                </form>
-                <p class="info bt">Powered by MikroTik RouterOS</p>
-
-            </div>
+            <p class="info bt">Powered by MikroTik RouterOS</p>
         </div>
     </div>
+</div>
 
-    <!-- كود جافاسكربت لفتح الكاميرا الخلفية فقط مع fallbacks -->
-    <script>
-        (function () {
-            // عناصر DOM
-            function $(id) { return document.getElementById(id); }
-            const openBtn = $('openScannerBtn');
-            const fileInput = $('qrFileInput');
-            const scannerArea = $('scannerArea');
-            const video = $('qrVideo');
-            const scannerMsg = $('scannerMsg');
-
-            let stream = null;
-
-            // تشغيل الستريم وعرض الفيديو
-            function startStream(s) {
-                stream = s;
-                try {
-                    video.srcObject = stream;
-                } catch (e) {
-                    // fallback older browsers
-                    video.src = window.URL.createObjectURL(stream);
-                }
-                video.setAttribute('playsinline', '');
-                video.play().catch(() => { /* ignore */ });
-                if (scannerArea) scannerArea.style.display = 'block';
-                if (scannerMsg) scannerMsg.textContent = 'Camera active';
-            }
-
-            function stopStream() {
-                if (stream) {
-                    stream.getTracks().forEach(t => t.stop());
-                    stream = null;
-                }
-                if (video) video.srcObject = null;
-                if (scannerArea) scannerArea.style.display = 'none';
-                if (scannerMsg) scannerMsg.textContent = '';
-            }
-
-            // محاولة فتح الكاميرا الخلفية بالترتيب: exact -> ideal -> enumerateDevices -> file input
-            async function openBackCamera() {
-                if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-                    alert('getUserMedia غير مدعوم في هذا المتصفح/السياق. سيتم فتح اختيار صورة كبديل.');
-                    if (fileInput) fileInput.click();
-                    return;
-                }
-
-                // 1) محاولة exact facingMode
-                try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } }, audio: false });
-                    startStream(s);
-                    return;
-                } catch (err) {
-                    console.debug('exact facingMode failed', err);
-                }
-
-                // 2) محاولة ideal facingMode
-                try {
-                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-                    startStream(s);
-                    return;
-                } catch (err) {
-                    console.debug('ideal facingMode failed', err);
-                }
-
-                // 3) enumerateDevices fallback: نطلب إذن مؤقت لعرض أسماء الأجهزة ثم نختار جهاز يبدو خلفيًا
-                try {
-                    const temp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                    const devices = await navigator.mediaDevices.enumerateDevices();
-                    temp.getTracks().forEach(t => t.stop());
-
-                    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-                    let preferred = videoDevices.find(d => /back|rear|environment|wide|ultrawide/i.test(d.label));
-                    if (!preferred && videoDevices.length) preferred = videoDevices[videoDevices.length - 1];
-
-                    if (preferred) {
-                        const s2 = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: preferred.deviceId } }, audio: false });
-                        startStream(s2);
-                        return;
-                    }
-                } catch (err) {
-                    console.debug('enumerateDevices fallback failed', err);
-                }
-
-                // 4) آخر حل: افتح اختيار ملف (الكاميرا عادةً تُفتح على الهاتف)
-                alert('تعذّر فتح الكاميرا الخلفية تلقائيًا. سيتم فتح اختيار ملف كبديل.');
-                if (fileInput) fileInput.click();
-            }
-
-            // ربط أحداث بعد DOMContentLoaded
-            window.addEventListener('DOMContentLoaded', () => {
-                if (!openBtn) return;
-                openBtn.addEventListener('click', openBackCamera);
-                // إذا استخدمت ملف fallback لالتقاط صورة فقط (يمكنك معالجتها لاحقاً)
-                if (fileInput) {
-                    fileInput.addEventListener('change', function (e) {
-                        // يمكن هنا معالجة الصورة أو تمريرها إلى ماسح QR
-                        const f = e.target.files && e.target.files[0];
-                        if (!f) return;
-                        // فتح الصورة في تبويب جديد كاختبار سريع
-                        const url = URL.createObjectURL(f);
-                        window.open(url, '_blank');
-                    });
-                }
-
-                // إيقاف الكاميرا عند مغادرة الصفحة
-                window.addEventListener('pagehide', stopStream);
-                window.addEventListener('beforeunload', stopStream);
-            });
-        })();
-    </script>
-    <script>
+<script>
 let html5QrCode;
 
 function startScan() {
-    document.getElementById("reader").style.display = "block";
+    const reader = document.getElementById("reader");
+    reader.style.display = "block";
+
     html5QrCode = new Html5Qrcode("reader");
 
     html5QrCode.start(
@@ -290,21 +111,29 @@ function startScan() {
             qrbox: 250
         },
         qrCodeMessage => {
-            // وضع الكود في حقل اسم المستخدم
+            // put QR value into username
             document.getElementById("username").value = qrCodeMessage;
 
-            // إيقاف الكاميرا
-            html5QrCode.stop();
-            document.getElementById("reader").style.display = "none";
+            // stop camera
+            html5QrCode.stop().then(() => {
+                reader.style.display = "none";
+
+                // AUTO LOGIN
+                setTimeout(() => {
+                    if (typeof doLogin === "function") {
+                        doLogin(); // CHAP enabled
+                    } else {
+                        document.login.submit(); // CHAP disabled
+                    }
+                }, 300);
+            });
         },
         errorMessage => {
-            // تجاهل الأخطاء
+            // ignore scan errors
         }
     );
 }
 </script>
 
 </body>
-
 </html>
-
