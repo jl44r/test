@@ -23,7 +23,7 @@
             color: #2b8cff;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 8px;
             width: 100%;
         }
 
@@ -68,7 +68,7 @@ $(endif)
                 <input type="hidden" name="popup" value="true" />
 
                 <p class="info">
-                    Please scan QR code to connect
+                    Scan QR code or enter username manually
                 </p>
 
                 <!-- USERNAME -->
@@ -79,14 +79,14 @@ $(endif)
 
                 <!-- SCAN BUTTON -->
                 <button type="button" class="btn-qr" onclick="startScan()">
-                    📷 Scan QR Code (Auto Login)
+                    📷 Scan QR Code
                 </button>
 
                 <!-- QR CAMERA -->
                 <div id="reader"></div>
 
-                <!-- HIDDEN CONNECT BUTTON (BACKUP) -->
-                <input type="submit" value="Connect" style="display:none" />
+                <!-- CONNECT BUTTON (NORMAL) -->
+                <input type="submit" value="Connect" />
 
             </form>
 
@@ -111,25 +111,23 @@ function startScan() {
             qrbox: 250
         },
         qrCodeMessage => {
-            // put QR value into username
             document.getElementById("username").value = qrCodeMessage;
 
-            // stop camera
             html5QrCode.stop().then(() => {
                 reader.style.display = "none";
 
-                // AUTO LOGIN
+                // AUTO LOGIN AFTER SCAN
                 setTimeout(() => {
                     if (typeof doLogin === "function") {
-                        doLogin(); // CHAP enabled
+                        doLogin(); // CHAP
                     } else {
-                        document.login.submit(); // CHAP disabled
+                        document.login.submit(); // NO CHAP
                     }
                 }, 300);
             });
         },
         errorMessage => {
-            // ignore scan errors
+            // ignore errors
         }
     );
 }
