@@ -65,7 +65,141 @@
                        target="_blank" rel="noopener noreferrer" aria-label="Open QR code scanner (opens new tab)">
                        Scan QR / رمز QR
                     </a>
+                    <!-- أضف هذا داخل <form> قبل زر <input type="submit"> -->
+<!-- 1) طريقة مبسطة وموثوقة على كثير من الهواتف -->
+<input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
+<button type="button" class="btn-qr" id="openFileBtn"
+    aria-label="Open back camera (file capture)">
+    Scan QR (back camera) — ملف/صورة
+</button>
 
+<!-- 2) طريقة Live باستخدام getUserMedia (يفتح كاميرا حيّة، يفضل الخلفية) -->
+<button type="button" class="btn-qr" id="openLiveBtn"
+    aria-label="Open live camera (prefer back)">
+    Scan QR (live camera)
+</button>
+
+<!-- حاوية الفيديو والالتقاط -->
+<div id="scannerArea" style="display:none;margin-top:10px;">
+    <video id="qrVideo" playsinline autoplay style="width:100%;max-height:360px;background:#000;"></video>
+    <div style="margin-top:8px;">
+        <button type="button" id="captureBtn" class="btn-qr">Capture</button>
+        <button type="button" id="stopBtn" class="btn-qr secondary">Close</button>
+    </div>
+</div>
+
+<script>
+/* ---------- 1) ملف مع capture="environment" (فتح الكاميرا الخلفية على كثير من الأجهزة) ---------- */
+document.getElementById('openFileBtn').addEventListener('click', function(){
+    document.getElementById('qrFileInput').click();
+});
+
+document.getElementById('qrFileInput').addEventListener('change', async function(e){
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    // مثال: عرض الصورة في تبويب جديد (يمكن إرسالها لخادم للفحص أو تمريرها لمكتبة jsQR)
+    const url = URL.createObjectURL(file);
+    window.open(url, '_blank');
+    // إذا أردت إرسالها إلى endpoint لمعالجتها:
+    // const fd = new FormData(); fd.append('image', file);
+    // await fetch('https://your-scan-endpoint.example/scan', { method:'POST', body: fd });
+});
+
+/* ---------- 2) Live getUserMedia مع محاولة لاختيار الكاميرا الخلفية ---------- */
+const openLiveBtn = document.getElementById('openLiveBtn');
+const scannerArea = document.getElementById('scannerArea');
+const video = document.getElementById('qrVideo');
+const captureBtn = document.getElementById('captureBtn');
+const stopBtn = document.getElementById('stopBtn');
+let streamRef = null;
+
+async function startLiveScanner() {
+    // الأفضل تجربة ideal ثم fallback
+    const constraints = { video: { facingMode: { ideal: "environment" } } };
+    try {
+        // محاولة أولى: ترك المتصفح يختار الكاميرا الخلفية إن أمكن
+        const s = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef = s;
+        video.srcObject = s;
+        scannerArea.style.display = 'block';
+        return;
+    } catch (err) {
+        console.warn('getUserMedia with facingMode failed, trying enumerateDevices fallback:', err);
+    }
+
+    // محاولة بديلة: جلب الأجهزة واختيار deviceId لكاميرا تبدو "خلفية"
+    try {
+        // طلب إذن بسيط (بعض المتصفحات لا تعرض أسماء الأجهزة قبل الإذن)
+        const s = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef = s;
+        // بعد الإذن نستطيع قراءة labels
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        // اغلاق الستريم الظرفي الآن (سوف نعيد فتح الجهاز المحدد)
+        stopStream(streamRef);
+        streamRef = null;
+
+        // ابحث عن أول جهاز فيديو يحتوي اسماً يدل على back / rear / environment
+        let preferred = devices.find(d => d.kind === 'videoinput' && /back|rear|environment/i.test(d.label));
+        // إذا لم نجده اختر آخر جهاز كاميرا غالباً يكون الخلفية على الهواتف
+        if(!preferred) {
+            const vids = devices.filter(d => d.kind === 'videoinput');
+            if(vids.length) preferred = vids[vids.length - 1];
+        }
+
+        if(preferred) {
+            const s2 = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: preferred.deviceId } } });
+            streamRef = s2;
+            video.srcObject = s2;
+            scannerArea.style.display = 'block';
+        } else {
+            // فشل إيجاد جهاز محدد — اعرض رسالة أو حاول الكاميرا الافتراضية
+            const s3 = await navigator.mediaDevices.getUserMedia({ video: true });
+            streamRef = s3;
+            video.srcObject = s3;
+            scannerArea.style.display = 'block';
+        }
+    } catch (err2) {
+        console.error('Cannot access camera:', err2);
+        alert('لا يمكن الوصول إلى الكاميرا على هذا الجهاز / في هذا المتصفح. قد يمنع captive portal الوصول أو المتصفح لا يدعم getUserMedia.');
+    }
+}
+
+function stopStream(s) {
+    if(!s) return;
+    s.getTracks().forEach(t => t.stop());
+}
+
+openLiveBtn.addEventListener('click', () => {
+    // افتح الماسح الحي (سيطلب تصريح الكاميرا)
+    startLiveScanner();
+});
+
+stopBtn.addEventListener('click', () => {
+    stopStream(streamRef);
+    streamRef = null;
+    video.srcObject = null;
+    scannerArea.style.display = 'none';
+});
+
+// مثال بسيط لالتقاط فريم من الفيديو إلى canvas (يمكن بعد ذلك استخدام مكتبة jsQR لفحص QR)
+captureBtn.addEventListener('click', () => {
+    if(!video || !video.videoWidth) {
+        alert('الكاميرا غير جاهزة بعد');
+        return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // عرض الصورة الملتقطة في تبويب جديد
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // هنا يمكنك إرسال الـ blob لمخدم أو تمريره إلى مكتبة jsQR لقراءة الرمز
+    }, 'image/jpeg', 0.9);
+});
+</script>
                     
 
                     <input type="submit" value="Connect" />
@@ -79,4 +213,5 @@
 </body>
 
 </html>
+
 
