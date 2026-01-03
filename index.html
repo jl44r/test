@@ -10,11 +10,11 @@
     <link rel="stylesheet" href="css/style.css">
 
     <style>
-        /* تنسيقات بسيطة لمساحة الماسح والزر */
+        /* بسيط لتنسيق زر الماسح ومنطقة الفيديو (يمكن نقله إلى css/style.css) */
         .btn-qr {
             display: inline-block;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 6px;
             background: #fff;
             border: 1px solid rgba(43, 140, 255, 0.14);
             color: #2b8cff;
@@ -46,7 +46,7 @@
             text-align: center;
         }
 
-        /* صندوق دليل المسح فوق الفيديو */
+        /* مربع إرشادي فوق الفيديو */
         #scanOverlay {
             position: absolute;
             left: 0;
@@ -74,7 +74,13 @@
 
 <body>
 
-    <!-- CHAP hidden form (يظهر فقط إن كان CHAP مفعل) -->
+    <!-- two other colors
+
+<body class="lite">
+<body class="dark">
+
+-->
+
     $(if chap-id)
     <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
         <input type="hidden" name="username" />
@@ -82,13 +88,23 @@
         <input type="hidden" name="dst" value="$(link-orig)" />
         <input type="hidden" name="popup" value="true" />
     </form>
-    <script src="/md5.js"></script>
-    $(endif)
 
+    <script src="/md5.js"></script>
+    <script>
+        function doLogin() {
+            document.sendin.username.value = document.login.username.value;
+            document.sendin.password.value = hexMD5('$(chap-id)' + document.login.username.value + '$(chap-challenge)');
+            document.sendin.submit();
+            return false;
+        }
+
+    </script>
+    $(endif)
     <div class="ie-fixMinHeight">
         <div class="main">
             <div class="wrap animated fadeIn">
-                <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
+                <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()"
+                    $(endif)>
                     <input type="hidden" name="dst" value="$(link-orig)" />
                     <input type="hidden" name="popup" value="true" />
                     <svg class="logo" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 174 42">
@@ -101,6 +117,7 @@
                             d="M42.91,1.4c.1,0,.11,0,.12.11A16.55,16.55,0,0,0,48.26,13a16.6,16.6,0,0,0,12,4.66c-10,4-20.55-5.6-17.33-16.28"
                             fill="#fff" fill-rule="evenodd" />
                     </svg>
+
 
                     <p class="info $(if error)alert$(endif)">
                         $(if error == "")Please log in to use the internet hotspot service $(if trial ==
@@ -116,15 +133,15 @@
                         <input name="username" type="text" value="" placeholder="Username" />
                     </label>
 
-                    <!-- زر يفتح الماسح ويطلب الكاميرا الخلفية -->
-                    <button type="button" class="btn-qr" id="openScannerBtn" aria-label="Open back camera scanner">
+                    <!-- زر جديد يفتح الكاميرا الخلفية فقط -->
+                    <button type="button" id="openScannerBtn" class="btn-qr" aria-label="Open back camera">
                         Scan QR (Back Camera)
                     </button>
 
                     <!-- fallback: input ملف يستخدم capture="environment" -->
                     <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display:none" />
 
-                    <!-- منطقة عرض الماسح الحي -->
+                    <!-- منطقة عرض الفيديو (ستظهر عند السماح بالكاميرا) -->
                     <div id="scannerArea">
                         <video id="qrVideo" playsinline autoplay></video>
                         <div id="scanOverlay">
@@ -134,6 +151,7 @@
                     </div>
 
                     <input type="submit" value="Connect" />
+
                 </form>
                 <p class="info bt">Powered by MikroTik RouterOS</p>
 
@@ -141,65 +159,72 @@
         </div>
     </div>
 
-    <!-- مكتبة jsQR لقراءة QR -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
+    <!-- كود جافاسكربت لفتح الكاميرا الخلفية فقط مع fallbacks -->
     <script>
-        // تعريف متغيرات CHAP (تُستبدل من قِبل RouterOS إن وُجدت)
-        var CHAP_EXISTS = false;
-        var CHAP_ID = '';
-        var CHAP_CHALLENGE = '';
-        $(if chap-id)
-        CHAP_EXISTS = true;
-        CHAP_ID = '$(chap-id)';
-        CHAP_CHALLENGE = '$(chap-challenge)';
-        $(endif)
+        (function () {
+            // عناصر DOM
+            function $(id) { return document.getElementById(id); }
+            const openBtn = $('openScannerBtn');
+            const fileInput = $('qrFileInput');
+            const scannerArea = $('scannerArea');
+            const video = $('qrVideo');
+            const scannerMsg = $('scannerMsg');
 
-        // عناصر DOM
-        const openScannerBtn = document.getElementById('openScannerBtn');
-        const qrFileInput = document.getElementById('qrFileInput');
-        const scannerArea = document.getElementById('scannerArea');
-        const qrVideo = document.getElementById('qrVideo');
-        const scannerMsg = document.getElementById('scannerMsg');
+            let stream = null;
 
-        let stream = null;
-        let scanning = false;
-        let rafId = null;
+            // تشغيل الستريم وعرض الفيديو
+            function startStream(s) {
+                stream = s;
+                try {
+                    video.srcObject = stream;
+                } catch (e) {
+                    // fallback older browsers
+                    video.src = window.URL.createObjectURL(stream);
+                }
+                video.setAttribute('playsinline', '');
+                video.play().catch(() => { /* ignore */ });
+                if (scannerArea) scannerArea.style.display = 'block';
+                if (scannerMsg) scannerMsg.textContent = 'Camera active';
+            }
 
-        // تأكد من ربط الأحداث بعد تحميل DOM
-        window.addEventListener('DOMContentLoaded', () => {
-            if (!openScannerBtn) return;
+            function stopStream() {
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
+                }
+                if (video) video.srcObject = null;
+                if (scannerArea) scannerArea.style.display = 'none';
+                if (scannerMsg) scannerMsg.textContent = '';
+            }
 
-            openScannerBtn.addEventListener('click', async () => {
-                scannerMsg.textContent = 'Requesting back camera...';
-
+            // محاولة فتح الكاميرا الخلفية بالترتيب: exact -> ideal -> enumerateDevices -> file input
+            async function openBackCamera() {
                 if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-                    alert('getUserMedia غير متوفّر في هذا المتصفح/السياق. سيتم فتح اختيار صورة كبديل.');
-                    qrFileInput.click();
+                    alert('getUserMedia غير مدعوم في هذا المتصفح/السياق. سيتم فتح اختيار صورة كبديل.');
+                    if (fileInput) fileInput.click();
                     return;
                 }
 
-                // محاولة 1: exact facingMode
+                // 1) محاولة exact facingMode
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } }, audio: false });
-                    startStream(stream);
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } }, audio: false });
+                    startStream(s);
                     return;
                 } catch (err) {
                     console.debug('exact facingMode failed', err);
                 }
 
-                // محاولة 2: ideal facingMode
+                // 2) محاولة ideal facingMode
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-                    startStream(stream);
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+                    startStream(s);
                     return;
                 } catch (err) {
                     console.debug('ideal facingMode failed', err);
                 }
 
-                // محاولة 3: enumerateDevices لاختيار deviceId يبدو خلفي
+                // 3) enumerateDevices fallback: نطلب إذن مؤقت لعرض أسماء الأجهزة ثم نختار جهاز يبدو خلفيًا
                 try {
-                    // بعض المتصفحات تحتاج إذن مؤقت لرؤية تسميات الأجهزة
                     const temp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                     const devices = await navigator.mediaDevices.enumerateDevices();
                     temp.getTracks().forEach(t => t.stop());
@@ -209,160 +234,42 @@
                     if (!preferred && videoDevices.length) preferred = videoDevices[videoDevices.length - 1];
 
                     if (preferred) {
-                        stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: preferred.deviceId } }, audio: false });
-                        startStream(stream);
+                        const s2 = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: preferred.deviceId } }, audio: false });
+                        startStream(s2);
                         return;
                     }
                 } catch (err) {
                     console.debug('enumerateDevices fallback failed', err);
                 }
 
-                // آخر حل: افتح ملف (سيشغّل تطبيق الكاميرا غالباً على الهاتف)
-                alert('تعذّر الوصول للكاميرا الخلفية تلقائياً. سيتم فتح اختيار ملف كبديل.');
-                qrFileInput.click();
-            });
-
-            // معالجة صورة من ملف كخطة احتياطية
-            qrFileInput.addEventListener('change', async (e) => {
-                const file = e.target.files && e.target.files[0];
-                if (!file) return;
-                const img = new Image();
-                img.src = URL.createObjectURL(file);
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    try {
-                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-                        if (code && code.data) {
-                            handleQRCode(code.data.trim());
-                        } else {
-                            alert('لم يتم قراءة رمز QR من الصورة.');
-                        }
-                    } catch (ex) {
-                        alert('خطأ عند معالجة الصورة: ' + (ex.message || ex));
-                    }
-                };
-                img.onerror = () => alert('خطأ في تحميل الصورة.');
-            });
-        });
-
-        // بدء البث من الستريم وإظهار الفيديو ثم بدء المسح
-        function startStream(s) {
-            stream = s;
-            qrVideo.srcObject = stream;
-            qrVideo.setAttribute('playsinline', 'true'); // مهم لأجهزة iOS
-            qrVideo.play().catch(() => { /* ignore */ });
-            scannerArea.style.display = 'block';
-            scanning = true;
-            scannerMsg.textContent = 'Scanning for QR...';
-            scanLoop();
-        }
-
-        function stopScanner() {
-            scanning = false;
-            if (rafId) cancelAnimationFrame(rafId);
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
+                // 4) آخر حل: افتح اختيار ملف (الكاميرا عادةً تُفتح على الهاتف)
+                alert('تعذّر فتح الكاميرا الخلفية تلقائيًا. سيتم فتح اختيار ملف كبديل.');
+                if (fileInput) fileInput.click();
             }
-            qrVideo.srcObject = null;
-            scannerArea.style.display = 'none';
-            scannerMsg.textContent = '';
-        }
 
-        function scanLoop() {
-            if (!scanning) return;
-            if (qrVideo.readyState === qrVideo.HAVE_ENOUGH_DATA) {
-                const canvas = document.createElement('canvas');
-                canvas.width = qrVideo.videoWidth;
-                canvas.height = qrVideo.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(qrVideo, 0, 0, canvas.width, canvas.height);
-                try {
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
-                    if (code && code.data) {
-                        stopScanner();
-                        handleQRCode(code.data.trim());
-                        return;
-                    }
-                } catch (e) {
-                    console.warn('scan error', e);
+            // ربط أحداث بعد DOMContentLoaded
+            window.addEventListener('DOMContentLoaded', () => {
+                if (!openBtn) return;
+                openBtn.addEventListener('click', openBackCamera);
+                // إذا استخدمت ملف fallback لالتقاط صورة فقط (يمكنك معالجتها لاحقاً)
+                if (fileInput) {
+                    fileInput.addEventListener('change', function (e) {
+                        // يمكن هنا معالجة الصورة أو تمريرها إلى ماسح QR
+                        const f = e.target.files && e.target.files[0];
+                        if (!f) return;
+                        // فتح الصورة في تبويب جديد كاختبار سريع
+                        const url = URL.createObjectURL(f);
+                        window.open(url, '_blank');
+                    });
                 }
-            }
-            rafId = requestAnimationFrame(scanLoop);
-        }
 
-        // معالجة نص QR وتنفيذ تسجيل الدخول (username == password افتراضياً)
-        function handleQRCode(qrText) {
-            if (!qrText) {
-                alert('الرمز فارغ.');
-                return;
-            }
-
-            let username = qrText;
-            let password = qrText;
-            if (qrText.indexOf(':') !== -1) {
-                const parts = qrText.split(':');
-                username = parts[0];
-                password = parts.slice(1).join(':');
-            }
-
-            // CHAP handling إذا كان موجوداً
-            if (CHAP_EXISTS) {
-                if (typeof hexMD5 === 'function') {
-                    try {
-                        document.sendin.username.value = username;
-                        document.sendin.password.value = hexMD5(CHAP_ID + username + CHAP_CHALLENGE);
-                        document.sendin.submit();
-                        return;
-                    } catch (err) {
-                        console.warn('CHAP submit failed', err);
-                    }
-                } else {
-                    alert('md5.js مطلوب لتسجيل الدخول عبر CHAP.');
-                    return;
-                }
-            }
-
-            // PAP / POST fallback: إنشاء فورم وإرساله
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '$(link-login-only)';
-            form.style.display = 'none';
-
-            const iUser = document.createElement('input');
-            iUser.name = 'username';
-            iUser.value = username;
-            form.appendChild(iUser);
-
-            const iPass = document.createElement('input');
-            iPass.name = 'password';
-            iPass.value = password;
-            form.appendChild(iPass);
-
-            const iDst = document.createElement('input');
-            iDst.name = 'dst';
-            iDst.value = '$(link-orig)';
-            form.appendChild(iDst);
-
-            const iPopup = document.createElement('input');
-            iPopup.name = 'popup';
-            iPopup.value = 'true';
-            form.appendChild(iPopup);
-
-            document.body.appendChild(form);
-            form.submit();
-        }
-
-        // إيقاف الكاميرا عند مغادرة الصفحة
-        window.addEventListener('pagehide', stopScanner);
-        window.addEventListener('beforeunload', stopScanner);
+                // إيقاف الكاميرا عند مغادرة الصفحة
+                window.addEventListener('pagehide', stopStream);
+                window.addEventListener('beforeunload', stopStream);
+            });
+        })();
     </script>
+
 </body>
 
 </html>
